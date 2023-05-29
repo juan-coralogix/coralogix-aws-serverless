@@ -16,7 +16,8 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
       # sam build 
-      - run: Build
+      - name: Build
+        run: sam build --use-container
         working-directory: ./src/s3
       - name: Package
         #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
