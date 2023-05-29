@@ -29,7 +29,9 @@ jobs:
              --output-template-file packaged.yaml
       - name: Publish
         run: sam publish --template packaged.yaml
+        working-directory: ./src/s3
       - name: Store
+        working-directory: ./src/s3
         run: |
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
