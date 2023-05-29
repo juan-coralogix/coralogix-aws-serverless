@@ -4,7 +4,7 @@ on:
     branches:
       - '*'
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -18,3 +18,12 @@ jobs:
       # sam build 
       - run: sam build --use-container
         working-directory: ./src/s3
+      - name: Package
+        #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+        working-directory: ./src/s3
+        run: |
+          sam package \
+            --s3-bucket juanfunctions \
+            --s3-prefix s3 \
+            --output-template-file packaged.yaml
+
