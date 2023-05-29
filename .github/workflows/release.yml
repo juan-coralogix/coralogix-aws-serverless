@@ -23,7 +23,10 @@ jobs:
         #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
         working-directory: ./src/s3
         run: |
-          sam package --output-template-file packaged.yaml
+          sam package \
+             --s3-bucket juanfunctions \
+             --s3-prefix s3 \
+             --output-template-file packaged.yaml
       - name: Publish
         run: sam publish --template packaged.yaml
       - name: Store
