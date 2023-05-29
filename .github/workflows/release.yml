@@ -16,7 +16,7 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
       # sam build 
-      - run: sam build --use-container
+      - run: Build
         working-directory: ./src/s3
       - name: Package
         #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
@@ -26,4 +26,10 @@ jobs:
             --s3-bucket juanfunctions \
             --s3-prefix s3 \
             --output-template-file packaged.yaml
+      - name: Store
+        #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: s3-packaged.yaml
+          path: src/s3/packaged.yaml
 
