@@ -27,33 +27,11 @@ jobs:
             --s3-bucket juanfunctions \
             --s3-prefix s3 \
             --output-template-file packaged.yaml
-      - name: Store
-        #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-        uses: actions/upload-artifact@v3
-        with:
-          name: s3-packaged.yaml
-          path: src/s3/packaged.yaml
-  publish:
-    runs-on: ubuntu-latest
-    name: Publish
-    #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
-    env:
-      AWS_SERVERLESS_BUCKET: juanfunctions
-    #needs: [infrastructure, check, build]
-    #strategy:
-    #  matrix:
-    #    package: ${{ fromJSON(needs.check.outputs.packages) }}
-    steps:
-      - name: Download
-        uses: actions/download-artifact@v3
-        with:
-          name: s3-packaged.yaml
-
       - name: Publish
         run: sam publish --template packaged.yaml
-
       - name: Store
         run: |
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
-            s3://${{ env.AWS_SERVERLESS_BUCKET }}-${{ env.AWS_DEFAULT_REGION }}/${{ matrix.package }}.zip
+            s3://juanfunctions-us-east-1/s3.zip
+
