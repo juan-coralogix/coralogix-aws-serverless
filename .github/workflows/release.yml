@@ -25,58 +25,50 @@ jobs:
               - 'src/cloudwatch-logs/**'
       # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
-        name: Set Output Variable
-        id: integration_s3
-        run: echo "::set-output name=INTEGRATION::s3"
-      - if: steps.changes.outputs.s3 == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Build
+        name: S3 Build
         run: sam build --use-container
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Package
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        name: S3 Package
+        working-directory: ./src/s3
         run: |
           sam package \
              --s3-bucket juanfunctions \
-             --s3-prefix ${{ steps.integration.outputs.INTEGRATION }} \
+             --s3-prefix s3 \
              --output-template-file packaged.yaml
       - if: steps.changes.outputs.s3 == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Publish
+        name: S3 Publish
         run: sam publish --template packaged.yaml
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Store
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        name: S3 Store
+        working-directory: ./src/s3
         run: |
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
-            s3://juanfunctions-us-east-1/${{ steps.integration.outputs.INTEGRATION }}.zip
+            s3://juanfunctions-us-east-1/s3.zip
       # sam cloudwatch build
       - if: steps.changes.outputs.cloudwatch == 'true'
-        name: Set Output Variable
-        id: integration_cloudwatch
-        run: echo "::set-output name=INTEGRATION::cloudwatch"
-      - if: steps.changes.outputs.cloudwatch == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Build
+        name: cloudwatch-logs Build
         run: sam build --use-container
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        working-directory: ./src/cloudwatch-logs
       - if: steps.changes.outputs.cloudwatch == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Package
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        name: cloudwatch-logs Package
+        working-directory: ./src/cloudwatch-logs
         run: |
           sam package \
              --s3-bucket juanfunctions \
-             --s3-prefix ${{ steps.integration.outputs.INTEGRATION }} \
+             --s3-prefix cloudwatch-logs \
              --output-template-file packaged.yaml
       - if: steps.changes.outputs.cloudwatch == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Publish
+        name: cloudwatch-logs Publish
         run: sam publish --template packaged.yaml
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        working-directory: ./src/cloudwatch-logs
       - if: steps.changes.outputs.cloudwatch == 'true'
-        name: ${{ steps.integration.outputs.INTEGRATION }} Store
-        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        name: cloudwatch-logs Store
+        working-directory: ./src/cloudwatch-logs
         run: |
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
-            s3://juanfunctions-us-east-1/${{ steps.integration.outputs.INTEGRATION }}.zip
+            s3://juanfunctions-us-east-1/cloudwatch-logs.zip
 
