@@ -8,42 +8,75 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: aws-actions/setup-sam@v1
+      - uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
       - uses: dorny/paths-filter@v2
         id: changes
         with:
           filters: |
             s3:
               - 'src/s3/**'
+            cloudwatch:
+              - 'src/cloudwatch-logs/**'
+      # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
-        uses: aws-actions/setup-sam@v1
+        name: Set Output Variable
+        id: integration
+        run: echo "::set-output name=INTEGRATION::s3"
       - if: steps.changes.outputs.s3 == 'true'
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
-      - if: steps.changes.outputs.s3 == 'true'
-        name: Build
+        name: ${{ steps.integration.outputs.INTEGRATION }} Build
         run: sam build --use-container
-        working-directory: ./src/s3
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
       - if: steps.changes.outputs.s3 == 'true'
-        name: Package
-        working-directory: ./src/s3
+        name: ${{ steps.integration.outputs.INTEGRATION }} Package
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
         run: |
           sam package \
              --s3-bucket juanfunctions \
-             --s3-prefix s3 \
+             --s3-prefix ${{ steps.integration.outputs.INTEGRATION }} \
              --output-template-file packaged.yaml
       - if: steps.changes.outputs.s3 == 'true'
-        name: Publish
+        name: ${{ steps.integration.outputs.INTEGRATION }} Publish
         run: sam publish --template packaged.yaml
-        working-directory: ./src/s3
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
       - if: steps.changes.outputs.s3 == 'true'
-        name: Store
-        working-directory: ./src/s3
+        name: ${{ steps.integration.outputs.INTEGRATION }} Store
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
         run: |
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
-            s3://juanfunctions-us-east-1/s3.zip
+            s3://juanfunctions-us-east-1/${{ steps.integration.outputs.INTEGRATION }}.zip
+      # sam cloudwatch build
+      - if: steps.changes.outputs.cloudwatch == 'true'
+        name: Set Output Variable
+        id: integration
+        run: echo "::set-output name=INTEGRATION::cloudwatch"
+      - if: steps.changes.outputs.cloudwatch == 'true'
+        name: ${{ steps.integration.outputs.INTEGRATION }} Build
+        run: sam build --use-container
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+      - if: steps.changes.outputs.cloudwatch == 'true'
+        name: ${{ steps.integration.outputs.INTEGRATION }} Package
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        run: |
+          sam package \
+             --s3-bucket juanfunctions \
+             --s3-prefix ${{ steps.integration.outputs.INTEGRATION }} \
+             --output-template-file packaged.yaml
+      - if: steps.changes.outputs.cloudwatch == 'true'
+        name: ${{ steps.integration.outputs.INTEGRATION }} Publish
+        run: sam publish --template packaged.yaml
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+      - if: steps.changes.outputs.cloudwatch == 'true'
+        name: ${{ steps.integration.outputs.INTEGRATION }} Store
+        working-directory: ./src/${{ steps.integration.outputs.INTEGRATION }}
+        run: |
+          aws s3 cp \
+            $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
+            s3://juanfunctions-us-east-1/${{ steps.integration.outputs.INTEGRATION }}.zip
 
