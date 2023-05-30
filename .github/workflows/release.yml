@@ -15,11 +15,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
-      # sam build 
-      - name: Build
+      - uses: dorny/paths-filter@v2
+        id: changes
+        with:
+          filters: |
+            s3:
+              - 'src/s3/**'
+      # sam s3 build
+      - if: steps.changes.outputs.s3 == 'true'
+        name: Build
         run: sam build --use-container
         working-directory: ./src/s3
-      - name: Package
+      - if: steps.changes.outputs.s3 == 'true'
+        name: Package
         #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
         working-directory: ./src/s3
         run: |
@@ -27,10 +35,12 @@ jobs:
              --s3-bucket juanfunctions \
              --s3-prefix s3 \
              --output-template-file packaged.yaml
-      - name: Publish
+      - if: steps.changes.outputs.s3 == 'true'
+        name: Publish
         run: sam publish --template packaged.yaml
         working-directory: ./src/s3
-      - name: Store
+      - if: steps.changes.outputs.s3 == 'true'
+        name: Store
         working-directory: ./src/s3
         run: |
           aws s3 cp \
