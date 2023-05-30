@@ -26,7 +26,7 @@ jobs:
       # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
         name: Set Output Variable
-        id: integration
+        id: integration_s3
         run: echo "::set-output name=INTEGRATION::s3"
       - if: steps.changes.outputs.s3 == 'true'
         name: ${{ steps.integration.outputs.INTEGRATION }} Build
@@ -54,7 +54,7 @@ jobs:
       # sam cloudwatch build
       - if: steps.changes.outputs.cloudwatch == 'true'
         name: Set Output Variable
-        id: integration
+        id: integration_cloudwatch
         run: echo "::set-output name=INTEGRATION::cloudwatch"
       - if: steps.changes.outputs.cloudwatch == 'true'
         name: ${{ steps.integration.outputs.INTEGRATION }} Build
