@@ -7,14 +7,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v2
       - uses: dorny/paths-filter@v2
         id: changes
         with:
           filters: |
             s3:
               - 'src/s3/**'
-      - if: steps.changes.outputs.s3 == 'true'
-        uses: actions/checkout@v2
       - if: steps.changes.outputs.s3 == 'true'
         uses: aws-actions/setup-sam@v1
       - if: steps.changes.outputs.s3 == 'true'
