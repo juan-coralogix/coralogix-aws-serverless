@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: Send CloudWatch logs to Coralogix.
 Metadata:
   AWS::ServerlessRepo::Application:
-    Name: Coralogix-CloudWatch
+    Name: juancho-CloudWatch
     Description: Send CloudWatch logs to Coralogix.
     Author: juancho
     SpdxLicenseId: Apache-2.0
