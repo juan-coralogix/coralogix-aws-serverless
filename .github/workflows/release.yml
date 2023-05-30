@@ -7,27 +7,29 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: aws-actions/setup-sam@v1
-      - uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
-          aws-region: us-east-1
       - uses: dorny/paths-filter@v2
         id: changes
         with:
           filters: |
             s3:
               - 'src/s3/**'
-      # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
-        name: S3 Build
+        uses: actions/checkout@v2
+      - if: steps.changes.outputs.s3 == 'true'
+        uses: aws-actions/setup-sam@v1
+      - if: steps.changes.outputs.s3 == 'true'
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+      - if: steps.changes.outputs.s3 == 'true'
+        name: Build
         run: sam build --use-container
         working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: S3 Package
+        name: Package
         working-directory: ./src/s3
         run: |
           sam package \
@@ -35,11 +37,11 @@ jobs:
              --s3-prefix s3 \
              --output-template-file packaged.yaml
       - if: steps.changes.outputs.s3 == 'true'
-        name: S3 Publish
+        name: Publish
         run: sam publish --template packaged.yaml
         working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: S3 Store
+        name: Store
         working-directory: ./src/s3
         run: |
           aws s3 cp \
