@@ -23,6 +23,13 @@ jobs:
               - 'src/s3/**'
             cloudwatch:
               - 'src/cloudwatch-logs/**'
+            archive-reader:
+              - 'src/archive-reader/**' 
+            athena-s3:
+              - 'src/athena-s3/**'
+            cloudtrail:
+              - 'src/cloudtrail/**'
+
       # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
         name: S3 Build
@@ -47,7 +54,7 @@ jobs:
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
             s3://juanfunctions-us-east-1/s3.zip
-      # sam cloudwatch build
+      # sam cloudwatch-logs build
       - if: steps.changes.outputs.cloudwatch == 'true'
         name: cloudwatch-logs Build
         run: sam build --use-container
@@ -71,4 +78,75 @@ jobs:
           aws s3 cp \
             $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
             s3://juanfunctions-us-east-1/cloudwatch-logs.zip
-
+      # sam archive-reader build
+      - if: steps.changes.outputs.archive-reader == 'true'
+        name: archive-reader Build
+        run: sam build --use-container
+        working-directory: ./src/archive-reader
+      - if: steps.changes.outputs.archive-reader == 'true'
+        name: archive-reader Package
+        working-directory: ./src/archive-reader
+        run: |
+          sam package \
+             --s3-bucket juanfunctions \
+             --s3-prefix archive-reader \
+             --output-template-file packaged.yaml
+      - if: steps.changes.outputs.archive-reader == 'true'
+        name: archive-reader Publish
+        run: sam publish --template packaged.yaml
+        working-directory: ./src/archive-reader
+      - if: steps.changes.outputs.archive-reader == 'true'
+        name: archive-reader Store
+        working-directory: ./src/archive-reader
+        run: |
+          aws s3 cp \
+            $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
+            s3://juanfunctions-us-east-1/archive-reader.zip
+      # sam athena-s3 build
+      - if: steps.changes.outputs.athena-s3 == 'true'
+        name: athena-s3 Build
+        run: sam build --use-container
+        working-directory: ./src/athena-s3
+      - if: steps.changes.outputs.athena-s3 == 'true'
+        name: athena-s3 Package
+        working-directory: ./src/athena-s3
+        run: |
+          sam package \
+             --s3-bucket juanfunctions \
+             --s3-prefix athena-s3 \
+             --output-template-file packaged.yaml
+      - if: steps.changes.outputs.athena-s3 == 'true'
+        name: athena-s3 Publish
+        run: sam publish --template packaged.yaml
+        working-directory: ./src/athena-s3
+      - if: steps.changes.outputs.athena-s3 == 'true'
+        name: athena-s3 Store
+        working-directory: ./src/athena-s3
+        run: |
+          aws s3 cp \
+            $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
+            s3://juanfunctions-us-east-1/athena-s3.zip
+      # sam cloudtrail build
+      - if: steps.changes.outputs.cloudtrail == 'true'
+        name: cloudtrail Build
+        run: sam build --use-container
+        working-directory: ./src/cloudtrail
+      - if: steps.changes.outputs.cloudtrail == 'true'
+        name: cloudtrail Package
+        working-directory: ./src/cloudtrail
+        run: |
+          sam package \
+             --s3-bucket juanfunctions \
+             --s3-prefix cloudtrail \
+             --output-template-file packaged.yaml
+      - if: steps.changes.outputs.cloudtrail == 'true'
+        name: cloudtrail Publish
+        run: sam publish --template packaged.yaml
+        working-directory: ./src/cloudtrail
+      - if: steps.changes.outputs.cloudtrail == 'true'
+        name: cloudtrail Store
+        working-directory: ./src/cloudtrail
+        run: |
+          aws s3 cp \
+            $(yq -r '.Resources | to_entries | .[] | select(.key == "LambdaLayer" or .key == "LambdaFunction") | .value.Properties | to_entries | .[] | select(.key == "ContentUri" or .key == "CodeUri") | .value' packaged.yaml) \
+            s3://juanfunctions-us-east-1/cloudtrail.zip        
