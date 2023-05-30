@@ -23,12 +23,11 @@ jobs:
               - 'src/s3/**'
       # sam s3 build
       - if: steps.changes.outputs.s3 == 'true'
-        name: Build
+        name: S3 Build
         run: sam build --use-container
         working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: Package
-        #if: ${{ github.event_name == 'pull_request' && github.event.pull_request.merged == true }}
+        name: S3 Package
         working-directory: ./src/s3
         run: |
           sam package \
@@ -36,11 +35,11 @@ jobs:
              --s3-prefix s3 \
              --output-template-file packaged.yaml
       - if: steps.changes.outputs.s3 == 'true'
-        name: Publish
+        name: S3 Publish
         run: sam publish --template packaged.yaml
         working-directory: ./src/s3
       - if: steps.changes.outputs.s3 == 'true'
-        name: Store
+        name: S3 Store
         working-directory: ./src/s3
         run: |
           aws s3 cp \
