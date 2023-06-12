@@ -6,7 +6,7 @@
  * @link        https://coralogix.com/
  * @copyright   Coralogix Ltd.
  * @licence     Apache-2.0
- * @version     1.0.4
+ * @version     1.0.5
  * @since       1.0.0
  */
 
@@ -48,6 +48,8 @@ exports.handler = function (event, context, callback) {
         Bucket: bucket,
         Key: key,
     };
+
+    console.log(`fetching object: s3://${bucket}/${key}}`)
     s3.getObject(params, (err, data) => {
         if (err) {
             console.log(err);
@@ -75,30 +77,33 @@ exports.handler = function (event, context, callback) {
 
     function sendLogs(content) {
         var logs =  content.toString('utf8').split(newlinePattern);
-
+    
+        // get fields from the first line of the log file
+        var fields = logs.shift().split(' ')
         console.log('numbers of logs:', logs.length)
         for (var i = 0; i < logs.length; i++) {
             // create a log
             if(!logs[i]) continue;
             const log = new Coralogix.Log({
-                text: parseRecord(logs[i]),
+                text: parseRecord(fields, logs[i]),
                 severity: 3
             })
             // send log to coralogix
             logger.addLog(log);
         }
-
     }
-
-    function parseRecord(record) {
-        const fields = [
-            "version", "account-id", "interface-id", "srcaddr",
-            "dstaddr", "srcport", "dstport", "protocol",
-            "packets", "bytes", "start", "end",
-            "action", "log-status"
-        ];
-        record = record.split(' ')
-        return JSON.stringify(Object.assign(...fields.map((field, index) => ({ [field]: ((!isNaN(record[index])) ? parseInt(record[index]) : record[index]) }))))
-    }
+    
+    function parseRecord(fields, record) {
+        const values = record.split(' ');
+      
+        const parsedLog = {};
+        fields.forEach((field, index) => {
+          const value = values[index];
+          parsedLog[field] = (!isNaN(value)) ? parseInt(value) : value;
+        });
+      
+        return JSON.stringify(parsedLog);
+      }
 };
+
 
